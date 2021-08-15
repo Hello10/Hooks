@@ -1,5 +1,11 @@
 module.exports = {
+  root: true,
+  parser: '@typescript-eslint/parser',
+  plugins: [
+    '@typescript-eslint'
+  ],
   extends: [
-    '@hello10/eslint-config-react'
+    '@hello10/eslint-config-react',
+    'plugin:@typescript-eslint/recommended'
   ]
 };

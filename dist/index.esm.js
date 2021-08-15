@@ -1,42 +1,4 @@
-import React, { useRef, useReducer } from 'react';
-
-const {
-  requestAnimationFrame,
-  cancelAnimationFrame
-} = window;
-function useAnimationFrame(callback) {
-  const request = useRef();
-  const last_time = useRef();
-  const first_time = useRef();
-
-  function animate(time) {
-    let first = first_time.current;
-
-    if (first === undefined) {
-      first_time.current = time;
-      first = time;
-    }
-
-    const last = last_time.current;
-
-    if (last !== undefined) {
-      const delta = time - last;
-      const total = time - first;
-      callback({
-        delta,
-        total
-      });
-    }
-
-    last_time.current = time;
-    request.current = requestAnimationFrame(animate);
-  }
-
-  React.useEffect(() => {
-    request.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(request.current);
-  }, []);
-}
+import React, { useReducer } from 'react';
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -85,18 +47,27 @@ class Singleton {
   }
 
   constructor(options = {}) {
+    this.state = void 0;
+    this.options = void 0;
+    this.listeners = void 0;
+
     if (this.constructor.instance) {
       throw new Error("Don't call singleton constructor directly");
     }
 
     this.options = options;
     this.listeners = [];
-    let {
-      state = {}
+    let state = {};
+    const {
+      state: o_state
     } = options;
 
-    if (state.constructor === Function) {
-      state = state();
+    if (o_state) {
+      if (typeof o_state === 'function') {
+        state = o_state();
+      } else {
+        state = o_state;
+      }
     }
 
     this.state = this.initialize(state);
@@ -123,11 +94,7 @@ class Singleton {
   }
 
 }
-
-function useSingleton(Class, options = {}) {
-  return Class.use(options);
-}
-useSingleton.Singleton = Singleton;
+Singleton.instance = void 0;
 
 function useStateBlob(initial) {
   return useReducer((state, delta) => {
@@ -135,5 +102,5 @@ function useStateBlob(initial) {
   }, initial);
 }
 
-export { useAnimationFrame, useSingleton, useStateBlob };
+export { Singleton, useStateBlob };
 //# sourceMappingURL=index.esm.js.map

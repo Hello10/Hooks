@@ -1,17 +1,16 @@
-export declare type SingletonOptions<State> = {
-    state?: Partial<State> | (() => Partial<State>);
-    [k: string]: unknown;
-};
-export declare class Singleton<State> {
+export interface SingletonOptions<TState> {
+    state?: Partial<TState> | (() => Partial<TState>);
+}
+export declare class Singleton<TState, TOptions extends SingletonOptions<TState>> {
     private static instance;
-    protected state: State;
-    protected options: SingletonOptions<State>;
-    protected listeners: ((state: State) => void)[];
-    static use<State>(options?: SingletonOptions<State>): Singleton<State>;
-    constructor(options?: SingletonOptions<State>);
-    initialize(state: Partial<State>): State;
-    setState(state: Partial<State>): void;
-    addListener(listener: (state: any) => void): void;
-    removeListener(listener: (state: any) => void): void;
+    protected state: TState;
+    protected options: TOptions;
+    protected listeners: ((state: TState) => void)[];
+    static use<TState, TOptions extends SingletonOptions<TState>, TSingleton extends Singleton<TState, TOptions>>(options: TOptions): TSingleton;
+    constructor(options: TOptions);
+    protected initialize(state: Partial<TState>): TState;
+    protected setState(state: Partial<TState>): void;
+    private addListener;
+    private removeListener;
 }
 export default Singleton;

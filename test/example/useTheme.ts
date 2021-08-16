@@ -1,20 +1,25 @@
-import {Singleton} from '../../dist';
+import {Singleton, SingletonOptions} from '../../dist';
 
 export interface ThemeState {
-  mode: Mode;
+  mode: ThemeMode;
   primary: string;
 }
 
-enum Mode {
+export enum ThemeMode {
   light = 'light',
   dark = 'dark'
 }
 
-class Theme extends Singleton<ThemeState> {
+export interface ThemeOptions extends SingletonOptions<ThemeState> {
+  state: ()=> Partial<ThemeState>;
+  upper: (s: string)=> string;
+}
+
+class Theme extends Singleton<ThemeState, ThemeOptions> {
   initialize (state: Partial<ThemeState>) {
     console.log('initializing...', state);
     return {
-      mode: Mode.light,
+      mode: ThemeMode.light,
       primary: '#000000',
       ...state
     };
@@ -22,7 +27,7 @@ class Theme extends Singleton<ThemeState> {
 
   toggleMode = ()=> {
     const {mode} = this.state;
-    const new_mode = mode === Mode.light ? Mode.dark : Mode.light;
+    const new_mode = mode === ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     console.log(`changing to ${new_mode} mode`);
     this.setState({mode: new_mode});
   };
@@ -31,29 +36,29 @@ class Theme extends Singleton<ThemeState> {
     this.setState({primary});
   }
 
-  get primary () {
+  get primary (): string {
     return this.state.primary;
   }
 
-  get mode () {
+  get mode (): ThemeMode {
     return this.state.mode;
   }
 
   isDark () {
-    return (this.state.mode === Mode.dark);
+    return (this.mode === ThemeMode.dark);
   }
 
   isLight () {
-    return (this.state.mode === Mode.light);
+    return (this.mode === ThemeMode.light);
   }
 
   get name () {
-    return this.options.upper(this.state.mode);
+    return this.options.upper(this.mode);
   }
 }
 
-export default function useTheme (): Singleton<ThemeState> {
-  return Theme.use<ThemeState>({
+export function useTheme (): Theme {
+  return Theme.use<ThemeState, ThemeOptions, Theme>({
     state: ()=> {
       return {
         primary: '#663399'
@@ -62,3 +67,5 @@ export default function useTheme (): Singleton<ThemeState> {
     upper: (s: string)=> s.toUpperCase()
   });
 }
+
+export default useTheme;

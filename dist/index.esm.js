@@ -19,7 +19,8 @@ function _extends() {
 }
 
 class Singleton {
-  static use(options = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static use(options) {
     if (!this.instance) {
       this.instance = new this(options);
     }
@@ -29,13 +30,17 @@ class Singleton {
     } = this;
     const [, setState] = React.useState();
     React.useEffect(() => {
+      // We need to explicitly track mount state to avoid
+      // setting state after a consumer is unmounted
       let is_mounted = true;
 
       function setStateIfMounted(state) {
         if (is_mounted) {
           setState(state);
         }
-      }
+      } // We add a listener with each consumer's call
+      // to .use, and remove on umount
+
 
       instance.addListener(setStateIfMounted);
       return () => {
@@ -46,7 +51,7 @@ class Singleton {
     return instance;
   }
 
-  constructor(options = {}) {
+  constructor(options) {
     this.state = void 0;
     this.options = void 0;
     this.listeners = void 0;
@@ -56,11 +61,13 @@ class Singleton {
     }
 
     this.options = options;
-    this.listeners = [];
+    this.listeners = []; // State can be either state object to set or function
+    // that returns the iniital state to be set
+
     let state = {};
     const {
       state: o_state
-    } = options;
+    } = this.options;
 
     if (o_state) {
       if (typeof o_state === 'function') {
@@ -71,7 +78,8 @@ class Singleton {
     }
 
     this.state = this.initialize(state);
-  }
+  } // Child classes can override .initialize for state initialization
+
 
   initialize(state) {
     return state;
@@ -86,7 +94,13 @@ class Singleton {
   }
 
   addListener(listener) {
-    this.listeners.push(listener);
+    const {
+      listeners
+    } = this;
+
+    if (!listeners.includes(listener)) {
+      this.listeners = [...listeners, listener];
+    }
   }
 
   removeListener(listener) {

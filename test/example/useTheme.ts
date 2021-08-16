@@ -1,13 +1,4 @@
-# Hooks
-React Hooks
-
-## Singleton
-
-Excerpted from [example app]("./test/example/")
-
-### Implementation of `useTheme` hook using `Singleton`
-```
-import {Singleton} from '@hello10/react-hooks';
+import {Singleton, SingletonOptions} from '../../dist';
 
 export interface ThemeState {
   mode: ThemeMode;
@@ -78,26 +69,3 @@ export function useTheme (): Theme {
 }
 
 export default useTheme;
-```
-
-### Consumption of `useTheme` hook
-```
-import React from 'react';
-
-import useTheme from './useTheme';
-
-export default function Button () {
-  const theme = useTheme();
-  return (
-    <button
-      onClick={theme.toggleMode}
-      style={{
-        borderColor: theme.primary,
-        color: theme.primary
-      }}
-    >
-      toggle
-    </button>
-  );
-}
-```

@@ -1,42 +1,4 @@
-import React, { useRef, useReducer } from 'react';
-
-const {
-  requestAnimationFrame,
-  cancelAnimationFrame
-} = window;
-function useAnimationFrame(callback) {
-  const request = useRef();
-  const last_time = useRef();
-  const first_time = useRef();
-
-  function animate(time) {
-    let first = first_time.current;
-
-    if (first === undefined) {
-      first_time.current = time;
-      first = time;
-    }
-
-    const last = last_time.current;
-
-    if (last !== undefined) {
-      const delta = time - last;
-      const total = time - first;
-      callback({
-        delta,
-        total
-      });
-    }
-
-    last_time.current = time;
-    request.current = requestAnimationFrame(animate);
-  }
-
-  React.useEffect(() => {
-    request.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(request.current);
-  }, []);
-}
+import React, { useReducer } from 'react';
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -57,7 +19,8 @@ function _extends() {
 }
 
 class Singleton {
-  static use(options = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static use(options) {
     if (!this.instance) {
       this.instance = new this(options);
     }
@@ -67,13 +30,17 @@ class Singleton {
     } = this;
     const [, setState] = React.useState();
     React.useEffect(() => {
+      // We need to explicitly track mount state to avoid
+      // setting state after a consumer is unmounted
       let is_mounted = true;
 
       function setStateIfMounted(state) {
         if (is_mounted) {
           setState(state);
         }
-      }
+      } // We add a listener with each consumer's call
+      // to .use, and remove on umount
+
 
       instance.addListener(setStateIfMounted);
       return () => {
@@ -84,23 +51,35 @@ class Singleton {
     return instance;
   }
 
-  constructor(options = {}) {
+  constructor(options) {
+    this.state = void 0;
+    this.options = void 0;
+    this.listeners = void 0;
+
     if (this.constructor.instance) {
       throw new Error("Don't call singleton constructor directly");
     }
 
     this.options = options;
-    this.listeners = [];
-    let {
-      state = {}
-    } = options;
+    this.listeners = []; // State can be either state object to set or function
+    // that returns the iniital state to be set
 
-    if (state.constructor === Function) {
-      state = state();
+    let state = {};
+    const {
+      state: o_state
+    } = this.options;
+
+    if (o_state) {
+      if (typeof o_state === 'function') {
+        state = o_state();
+      } else {
+        state = o_state;
+      }
     }
 
     this.state = this.initialize(state);
-  }
+  } // Child classes can override .initialize for state initialization
+
 
   initialize(state) {
     return state;
@@ -115,7 +94,13 @@ class Singleton {
   }
 
   addListener(listener) {
-    this.listeners.push(listener);
+    const {
+      listeners
+    } = this;
+
+    if (!listeners.includes(listener)) {
+      this.listeners = [...listeners, listener];
+    }
   }
 
   removeListener(listener) {
@@ -123,11 +108,7 @@ class Singleton {
   }
 
 }
-
-function useSingleton(Class, options = {}) {
-  return Class.use(options);
-}
-useSingleton.Singleton = Singleton;
+Singleton.instance = void 0;
 
 function useStateBlob(initial) {
   return useReducer((state, delta) => {
@@ -135,5 +116,5 @@ function useStateBlob(initial) {
   }, initial);
 }
 
-export { useAnimationFrame, useSingleton, useStateBlob };
+export { Singleton, useStateBlob };
 //# sourceMappingURL=index.esm.js.map

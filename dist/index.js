@@ -1,45 +1,8 @@
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
 var React = require('react');
-var React__default = _interopDefault(React);
 
-const {
-  requestAnimationFrame,
-  cancelAnimationFrame
-} = window;
-function useAnimationFrame(callback) {
-  const request = React.useRef();
-  const last_time = React.useRef();
-  const first_time = React.useRef();
+function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
-  function animate(time) {
-    let first = first_time.current;
-
-    if (first === undefined) {
-      first_time.current = time;
-      first = time;
-    }
-
-    const last = last_time.current;
-
-    if (last !== undefined) {
-      const delta = time - last;
-      const total = time - first;
-      callback({
-        delta,
-        total
-      });
-    }
-
-    last_time.current = time;
-    request.current = requestAnimationFrame(animate);
-  }
-
-  React__default.useEffect(() => {
-    request.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(request.current);
-  }, []);
-}
+var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -60,7 +23,8 @@ function _extends() {
 }
 
 class Singleton {
-  static use(options = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static use(options) {
     if (!this.instance) {
       this.instance = new this(options);
     }
@@ -68,15 +32,19 @@ class Singleton {
     const {
       instance
     } = this;
-    const [, setState] = React__default.useState();
-    React__default.useEffect(() => {
+    const [, setState] = React__default['default'].useState();
+    React__default['default'].useEffect(() => {
+      // We need to explicitly track mount state to avoid
+      // setting state after a consumer is unmounted
       let is_mounted = true;
 
       function setStateIfMounted(state) {
         if (is_mounted) {
           setState(state);
         }
-      }
+      } // We add a listener with each consumer's call
+      // to .use, and remove on umount
+
 
       instance.addListener(setStateIfMounted);
       return () => {
@@ -87,23 +55,35 @@ class Singleton {
     return instance;
   }
 
-  constructor(options = {}) {
+  constructor(options) {
+    this.state = void 0;
+    this.options = void 0;
+    this.listeners = void 0;
+
     if (this.constructor.instance) {
       throw new Error("Don't call singleton constructor directly");
     }
 
     this.options = options;
-    this.listeners = [];
-    let {
-      state = {}
-    } = options;
+    this.listeners = []; // State can be either state object to set or function
+    // that returns the iniital state to be set
 
-    if (state.constructor === Function) {
-      state = state();
+    let state = {};
+    const {
+      state: o_state
+    } = this.options;
+
+    if (o_state) {
+      if (typeof o_state === 'function') {
+        state = o_state();
+      } else {
+        state = o_state;
+      }
     }
 
     this.state = this.initialize(state);
-  }
+  } // Child classes can override .initialize for state initialization
+
 
   initialize(state) {
     return state;
@@ -118,7 +98,13 @@ class Singleton {
   }
 
   addListener(listener) {
-    this.listeners.push(listener);
+    const {
+      listeners
+    } = this;
+
+    if (!listeners.includes(listener)) {
+      this.listeners = [...listeners, listener];
+    }
   }
 
   removeListener(listener) {
@@ -126,11 +112,7 @@ class Singleton {
   }
 
 }
-
-function useSingleton(Class, options = {}) {
-  return Class.use(options);
-}
-useSingleton.Singleton = Singleton;
+Singleton.instance = void 0;
 
 function useStateBlob(initial) {
   return React.useReducer((state, delta) => {
@@ -138,7 +120,6 @@ function useStateBlob(initial) {
   }, initial);
 }
 
-exports.useAnimationFrame = useAnimationFrame;
-exports.useSingleton = useSingleton;
+exports.Singleton = Singleton;
 exports.useStateBlob = useStateBlob;
 //# sourceMappingURL=index.js.map
